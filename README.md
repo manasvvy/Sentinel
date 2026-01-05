@@ -114,3 +114,17 @@ Sentinel is intentionally simple.
 Simple systems are easier to reason about, safer to deploy, and harder to misuse.
 
 This project is about building AI systems that survive real use, not just good demos.
+
+---
+
+## Execution log
+
+* Defined system scope and responsibility boundaries
+
+* Finalized backend-first architecture
+
+* Locked confidence and governance as core primitives
+
+* Documented system design before implementation
+
+* Set up repo structure for iterative development
