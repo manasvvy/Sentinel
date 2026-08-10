@@ -1,1 +1,26 @@
-from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom app.api.chat import router as chat_router\n\napp = FastAPI(\n    title=\"Sentinel\",\n    description=\"AI with confidence transparency and learning signals\",\n    version=\"0.1.0\"\n)\n\n# Enable CORS for frontend\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\n# Include routers\napp.include_router(chat_router)\n\n# Health check endpoint\n@app.get(\"/health\")\ndef health():\n    return {\"status\": \"ok\"}\n
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.chat import router as chat_router
+
+app = FastAPI(
+    title="Sentinel",
+    description="AI with confidence transparency and learning signals",
+    version="0.1.0"
+)
+
+# Enable CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(chat_router)
+
+# Health check endpoint
+@app.get("/health")
+def health():
+    return {"status": "ok"}
