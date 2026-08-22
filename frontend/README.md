@@ -4,12 +4,12 @@ A performant, production-ready React/Next.js frontend for the Sentinel AI system
 
 ## Features
 
-- ⚡ **High Performance** - Next.js 14, optimized rendering, lazy loading
-- 🎨 **Beautiful UI** - Tailwind CSS, responsive design, dark mode ready
-- 📊 **Real-time Metrics** - Session tracking, correction rates, confidence trends
-- 🔐 **Type-Safe** - Full TypeScript support
-- 💾 **Persistent State** - Zustand with localStorage
-- 🚀 **Production Ready** - Error handling, loading states, accessibility
+**High Performance** - Next.js 14, optimized rendering, lazy loading
+**Beautiful UI** - Tailwind CSS, responsive design, dark mode ready
+**Real-time Metrics** - Session tracking, correction rates, confidence trends
+**Type-Safe** - Full TypeScript support
+**Persistent State** - Zustand with localStorage
+**Production Ready** - Error handling, loading states, accessibility
 
 ## Quick Start
 
