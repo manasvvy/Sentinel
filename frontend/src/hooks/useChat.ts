@@ -1,92 +1,127 @@
-import { useCallback, useRef } from 'react';
-import { chatApi } from '@/config/api';
+'use client';
+
+import { useCallback } from 'react';
 import { useChatStore, Message } from '@/store/chat';
+import apiClient from '@/config/api';
+import { API_ENDPOINTS } from '@/config/constants';
+
+interface CorrectInfo {
+  messageId: string;
+  feedbackText?: string;
+}
 
 export const useChat = () => {
   const store = useChatStore();
-  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const initSession = useCallback(() => {
+    store.initSession();
+  }, [store]);
 
   const sendMessage = useCallback(
-    async (userInput: string) => {
-      if (!userInput.trim()) return;
+    async (content: string) => {
+      if (!content.trim()) return;
 
       try {
-        // Initialize session if needed
+        // Ensure session is initialized
         if (!store.sessionId) {
           store.initSession();
         }
 
         // Add user message
         const userMessage: Message = {
-          id: `msg-${Date.now()}`,
+          id: `user-${Date.now()}`,
           role: 'user',
-          content: userInput,
+          content,
           timestamp: Date.now(),
         };
         store.addMessage(userMessage);
 
-        // Add loading message
-        const loadingMessage: Message = {
-          id: `msg-${Date.now()}-loading`,
-          role: 'assistant',
-          content: '',
-          timestamp: Date.now(),
-          isStreaming: true,
-        };
-        store.addMessage(loadingMessage);
+        // Set loading state
         store.setLoading(true);
         store.setError(null);
 
-        // Call API
-        const response = await chatApi.sendMessage(userInput, store.sessionId);
+        // Add streaming placeholder
+        const assistantMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: '',
+          isStreaming: true,
+          timestamp: Date.now(),
+        };
+        store.addMessage(assistantMessage);
 
-        // Update loading message with response
+        // Call backend API
+        const response = await apiClient.post(API_ENDPOINTS.CHAT, {
+          sessionId: store.sessionId,
+          message: content,
+        });
+
+        // Update streaming message with response
+        const { message, confidence, confidenceReasoning } = response.data;
         store.updateLastMessage({
-          content: response.response_text,
-          confidenceScore: response.confidence_score,
-          confidenceLevel: response.confidence_state,
-          reasoning: response.reasoning,
+          content: message,
+          confidenceScore: confidence,
+          confidenceLevel:
+            confidence >= 0.8
+              ? 'confident'
+              : confidence >= 0.5
+              ? 'cautious'
+              : 'guessing',
+          reasoning: confidenceReasoning
+            ? [confidenceReasoning]
+            : undefined,
           isStreaming: false,
         });
 
         store.setLoading(false);
-      } catch (error: any) {
-        store.setError(error.message || 'Failed to send message');
-        // Remove loading message on error
-        const messages = store.messages.filter((m) => !m.isStreaming);
-        // Reset to previous state (simplified)
+      } catch (error) {
         store.setLoading(false);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to send message';
+        store.setError(errorMessage);
+        console.error('Chat error:', error);
       }
     },
     [store]
   );
 
   const recordCorrection = useCallback(
-    async (correctInfo: string, note?: string) => {
+    async (correctInfo: CorrectInfo, context: string) => {
       try {
-        await chatApi.recordCorrection(store.sessionId, correctInfo, note);
-        // Optionally show success feedback
-      } catch (error: any) {
+        await apiClient.post(API_ENDPOINTS.CORRECT, {
+          sessionId: store.sessionId,
+          messageId: correctInfo.messageId,
+          feedbackText: correctInfo.feedbackText || context,
+        });
+      } catch (error) {
+        console.error('Error recording correction:', error);
         store.setError('Failed to record correction');
       }
     },
-    [store.sessionId]
+    [store]
   );
 
   const getSessionMetrics = useCallback(async () => {
     try {
-      const summary = await chatApi.getSessionSummary(store.sessionId);
-      return summary;
-    } catch (error: any) {
-      store.setError('Failed to load session metrics');
+      const response = await apiClient.get(
+        API_ENDPOINTS.SESSION_SUMMARY.replace(':id', store.sessionId)
+      );
+      return response.data.metrics;
+    } catch (error) {
+      console.error('Error fetching metrics:', error);
       return null;
     }
   }, [store.sessionId]);
 
   return {
-    ...store,
+    sessionId: store.sessionId,
+    messages: store.messages,
+    isLoading: store.isLoading,
+    error: store.error,
+    initSession,
     sendMessage,
     recordCorrection,
     getSessionMetrics,
+    clearChat: store.clearChat,
   };
 };
