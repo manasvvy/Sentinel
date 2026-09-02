@@ -50,26 +50,20 @@ export const useChat = () => {
         };
         store.addMessage(assistantMessage);
 
-        // Call backend API
+        // Call backend API - matches backend schema
         const response = await apiClient.post(API_ENDPOINTS.CHAT, {
-          sessionId: store.sessionId,
-          message: content,
+          user_input: content,
+          session_id: store.sessionId,
         });
 
-        // Update streaming message with response
-        const { message, confidence, confidenceReasoning } = response.data;
+        // Extract response data matching backend response format
+        const { response_text, confidence_score, confidence_state, reasoning } = response.data;
+        
         store.updateLastMessage({
-          content: message,
-          confidenceScore: confidence,
-          confidenceLevel:
-            confidence >= 0.8
-              ? 'confident'
-              : confidence >= 0.5
-              ? 'cautious'
-              : 'guessing',
-          reasoning: confidenceReasoning
-            ? [confidenceReasoning]
-            : undefined,
+          content: response_text,
+          confidenceScore: confidence_score,
+          confidenceLevel: confidence_state,
+          reasoning: reasoning && Array.isArray(reasoning) ? reasoning : [reasoning].filter(Boolean),
           isStreaming: false,
         });
 
@@ -86,12 +80,12 @@ export const useChat = () => {
   );
 
   const recordCorrection = useCallback(
-    async (correctInfo: CorrectInfo, context: string) => {
+    async (correctInfo: string, context: string) => {
       try {
         await apiClient.post(API_ENDPOINTS.CORRECT, {
-          sessionId: store.sessionId,
-          messageId: correctInfo.messageId,
-          feedbackText: correctInfo.feedbackText || context,
+          session_id: store.sessionId,
+          correct_info: correctInfo,
+          note: context,
         });
       } catch (error) {
         console.error('Error recording correction:', error);
@@ -106,7 +100,7 @@ export const useChat = () => {
       const response = await apiClient.get(
         API_ENDPOINTS.SESSION_SUMMARY.replace(':id', store.sessionId)
       );
-      return response.data.metrics;
+      return response.data;
     } catch (error) {
       console.error('Error fetching metrics:', error);
       return null;
