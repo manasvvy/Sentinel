@@ -204,6 +204,3 @@ NEXT_PUBLIC_API_URL=https://api.example.com
 - Profile with React DevTools
 - Check for console errors
 
-## License
-
-MIT
