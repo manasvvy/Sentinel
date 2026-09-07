@@ -57,7 +57,7 @@ The Sentinel frontend has been fully implemented as a production-ready React/Nex
    - Learning trend indicator
    - Auto-refresh every 10 seconds
 
-### ✅ State Management
+###  State Management
 - **Chat Store** (`src/store/chat.ts`)
   - Session ID generation and persistence
   - Message history management
