@@ -1,9 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from app.schemas.chat import ChatRequest, ChatResponse, CorrectionRequest, SessionSummaryResponse
-from app.models.llm_client import call_llm
+
 from app.core.confidence import evaluate_confidence
-from app.core.session import session_manager
+from app.core.governance import evaluate_governance
 from app.core.logging import audit_logger
+from app.core.safety import evaluate_safety
+from app.core.session import session_manager
+from app.models.llm_client import call_llm
+from app.schemas.chat import (
+    ChatRequest,
+    ChatResponse,
+    CorrectionRequest,
+    SessionSummaryResponse,
+)
 
 router = APIRouter()
 
@@ -12,7 +20,7 @@ router = APIRouter()
 def chat(request: ChatRequest):
     """
     Chat endpoint with confidence evaluation.
-    
+
     Flow:
     1. Get raw model output
     2. Evaluate confidence (not just fluency)
@@ -21,33 +29,50 @@ def chat(request: ChatRequest):
     5. Return structured response
     """
     try:
-        # 1. Get raw model output
         model_response = call_llm(request.user_input)
-        
-        # 2. Evaluate confidence (now returns detailed dict)
         confidence_state = evaluate_confidence(model_response)
-        
-        # 3. Track in session
+        safety_result = evaluate_safety(request.user_input + " " + model_response)
+        governance_result = evaluate_governance(
+            session_id=request.session_id,
+            user_input=request.user_input,
+            response_text=model_response,
+            confidence_score=confidence_state["score"],
+            confidence_level=confidence_state["level"],
+            safety_result=safety_result,
+        )
+
         session_manager.add_message(request.session_id, request.user_input, {
             "response_text": model_response,
-            "confidence": confidence_state
+            "confidence": confidence_state,
+            "governance": governance_result,
         })
-        
-        # 4. Log for audit and governance
+
         audit_logger.log_interaction(request.session_id, {
             "user_input": request.user_input,
             "response_text": model_response,
             "confidence_score": confidence_state["score"],
             "confidence_level": confidence_state["level"],
-            "reasoning": confidence_state["reasoning"]
+            "reasoning": confidence_state["reasoning"],
+            "safety": safety_result,
+            "governance": governance_result,
         })
-        
-        # 5. Return structured response
+
+        if not safety_result["safe"] or governance_result["status"] == "review":
+            return ChatResponse(
+                response_text=model_response,
+                confidence_state=confidence_state["level"],
+                confidence_score=confidence_state["score"],
+                reasoning=[
+                    *confidence_state["reasoning"],
+                    "This response was flagged for human review by Sentinel governance.",
+                ],
+            )
+
         return ChatResponse(
             response_text=model_response,
             confidence_state=confidence_state["level"],
             confidence_score=confidence_state["score"],
-            reasoning=confidence_state["reasoning"]
+            reasoning=confidence_state["reasoning"],
         )
     except Exception as e:
         audit_logger.log_error(request.session_id, str(e))
@@ -63,15 +88,15 @@ def record_correction(request: CorrectionRequest):
     try:
         result = session_manager.record_correction(
             request.session_id,
-            request.correct_info
+            request.correct_info,
         )
-        
+
         audit_logger.log_correction(
             request.session_id,
             request.correct_info,
-            {"correction_note": request.note} if request.note else {}
+            {"correction_note": request.note} if request.note else {},
         )
-        
+
         return result
     except Exception as e:
         audit_logger.log_error(request.session_id, str(e))
@@ -82,7 +107,7 @@ def record_correction(request: CorrectionRequest):
 def get_session_summary(session_id: str):
     """
     Get session summary with behavior metrics.
-    
+
     Primary signal: correction rate (increase over time = better)
     Supporting signals: confidence calibration, usage patterns
     """
