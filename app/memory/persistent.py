@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 
 class ConsentMemoryStore:
-    """Simple file-backed memory store with explicit consent checks."""
+    """Simple file-backed memory store with explicit consent checking."""
 
     def __init__(self, storage_path: Optional[str] = None):
         self.storage_path = storage_path or os.getenv("MEMORY_STORE_PATH", "memory_store.json")
@@ -51,8 +51,7 @@ class ConsentMemoryStore:
         return {"stored": True, "memory": record}
 
     def get_session_memory(self, session_id: str) -> List[Dict[str, Any]]:
-        session_entry = self._store.setdefault("sessions", {}).get(session_id, {})
-        return session_entry.get("memories", [])
+        return self._store.setdefault("sessions", {}).get(session_id, {}).get("memories", [])
 
     def clear_session(self, session_id: str) -> None:
         self._store.setdefault("sessions", {}).pop(session_id, None)

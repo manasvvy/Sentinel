@@ -18,13 +18,14 @@ UNSAFE_PATTERNS: List[str] = [
     "bypass security",
     "steal credentials",
     "attack a person",
+    "illegal drug manufacturing",
 ]
 
 
 def evaluate_safety(text: str) -> Dict[str, Any]:
-    """Return a minimal safety evaluation for a user or model output."""
+    """Return a minimal safety evaluation for user or model output."""
     normalized = re.sub(r"\s+", " ", str(text or "")).lower()
-    matches = []
+    matches: List[str] = []
 
     for pattern in UNSAFE_PATTERNS:
         if pattern in normalized:

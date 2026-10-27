@@ -21,19 +21,13 @@ class MonitoringLogger:
         self._write(entry)
 
     def log_metric(self, name: str, value: float, **payload: Any) -> None:
-        self.log_event(
-            "metric",
-            metric_name=name,
-            value=value,
-            **payload,
-        )
+        self.log_event("metric", metric_name=name, value=value, **payload)
 
     def _write(self, entry: Dict[str, Any]) -> None:
         try:
             with open(self.log_file, "a", encoding="utf-8") as handle:
                 handle.write(json.dumps(entry, default=str) + "\n")
         except OSError:
-            # Fail silently to avoid bringing the app down during logging.
             pass
 
 

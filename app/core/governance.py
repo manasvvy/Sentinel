@@ -17,10 +17,12 @@ class GovernanceDecision:
 
 
 class GovernanceEngine:
-    """Simple governance layer for Sentinel.
+    """Minimal governance policy for Sentinel.
 
-    It enforces a minimal policy layer: low-confidence or unsafe content
-    is held for review, while confident and safe content can proceed.
+    Decisioning is intentionally simple but explicit:
+    - unsafe content is reviewed
+    - low-confidence output is marked cautious or review
+    - otherwise the response can proceed
     """
 
     def __init__(self) -> None:
@@ -39,11 +41,10 @@ class GovernanceEngine:
 
         if not safety_result.get("safe", True):
             action = "review"
-            reason = "Unsafe or high-risk content detected."
+            reason = "Unsafe or high-risk content detected; requires human review."
         elif confidence_level == "guessing":
             action = "review"
-            reason = "Response confidence is too low for direct trust." \
-                " The system should mark this as uncertain."
+            reason = "Response confidence is too low for trusted delivery."
         elif confidence_score < 0.45:
             action = "caution"
             reason = "Confidence is below the preferred threshold."
@@ -91,8 +92,6 @@ class GovernanceEngine:
         ]
         return decisions[:limit]
 
-
-# Global governance engine
 
 governance_engine = GovernanceEngine()
 
