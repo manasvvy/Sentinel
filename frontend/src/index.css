@@ -1,0 +1,76 @@
+/* =========================================================
+   Sentinel – index.css
+   Base reset + dark theme foundation
+   ========================================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Scrollbars — global dark style */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #21262d #0d1117;
+}
+
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #21262d; border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: #30363d; }
+
+/* Selection */
+::selection {
+  background: rgba(88, 166, 255, 0.2);
+  color: #e6edf3;
+}
+
+/* Links */
+a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+/* Code */
+code, pre {
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+/* Input / textarea / button resets */
+input, textarea, button, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+}

@@ -1,0 +1,31 @@
+# render.yaml — Render deployment configuration for Sentinel backend
+# https://render.com/docs/yaml-spec
+
+services:
+  - type: web
+    name: sentinel-api
+    runtime: python
+    region: oregon
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # Set manually in Render dashboard — never commit this
+
+      - key: ALLOWED_ORIGINS
+        sync: false          # Set to your Vercel frontend URL, e.g. https://sentinel-xyz.vercel.app
+
+      - key: LOG_LEVEL
+        value: INFO
+
+      - key: LOG_FILE
+        value: ""            # Empty = stdout only (correct for cloud)
+
+      - key: PERSISTENT_STORAGE_DIR
+        value: /tmp/sentinel_memory
+
+    healthCheckPath: /health
+    autoDeploy: true
